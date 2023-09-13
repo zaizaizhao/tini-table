@@ -43,7 +43,7 @@ const tableInit = <T>(rows: number, cols: number, content: T): T[][] => {
     return res;
 }
 
-const tableInfo = reactive(tableInit(props.rows, props.cols, '1'));
+const tableInfo = reactive(tableInit(props.rows, props.cols, { value: '1', edit: false }));
 
 function mousedown(event: MouseEvent): void {
     startCell.value = event.target as HTMLTableCellElement;
@@ -62,7 +62,6 @@ function mouseover(event: MouseEvent) {
 }
 
 function mouseup(event: MouseEvent) {
-    console.log("mouseup");
     if (isMouseDown.value) {
         isMouseDown.value = false;
     }
@@ -77,22 +76,25 @@ function chooseCell(): void {
         startCell.value?.cellIndex,
         endCell.value?.cellIndex
     ].sort();
-    for (let i = startRow; i <= endRow; i++) {
+    for (let i = 0; i < props.rows; i++) {
         let rows = tiniTable.value?.rows[i]
-        for (let j = startCol; j <= endCol; j++) {
-            let cell = rows.cells[j]
-            cell.style.backgroundColor = 'gray';
-            chosenCells.value.push(cell)
+        for (let j = 0; j < props.cols; j++) {
+            let cell = rows.cells[j];
+            if (i >= startRow && i <= endRow && j >= startCol && j <= endCol) {
+                cell.style.backgroundColor = 'gray';
+            } else {
+                cell.style.backgroundColor = '';
+            }
         }
     }
 }
 
 function cancelChosen() {
-        const cells = Array.prototype.slice.call(tiniTable.value?.getElementsByTagName('td'));
-        chosenCells.value.forEach(cell => {
-            cell.style.backgroundColor = 'white'
-        })
-        chosenCells.value = []
+    const cells = Array.prototype.slice.call(tiniTable.value?.getElementsByTagName('td'));
+    chosenCells.value.forEach(cell => {
+        cell.style.backgroundColor = 'white'
+    })
+    chosenCells.value = []
 }
 
 onMounted(() => {
@@ -105,14 +107,24 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
+    <span>表格的行数：{{ props.rows }}</span>
+    <span>表格的列数：{{ props.cols }}</span>
+    <div class="menu">
+        <span class="menu-item">合并单元格</span>
+        <span class="menu-item">新增一行</span>
+        <span class="menu-item">新增一列</span>
+        <span class="menu-item">删除行</span>
+        <span class="menu-item">删除列</span>
+    </div>
     <div>
-        <span>表格的行数：{{ props.rows }}</span>
-        <span>表格的列数：{{ props.cols }}</span>
-        <span>{{ isMouseDown }}</span>
+
         <table @click.stop ref="tiniTable">
-            <tr v-for="row in tableInfo ">
+            <tr v-for="row in  tableInfo  ">
                 <td @mousedown="mousedown($event)" @mouseover="mouseover($event)" @mouseup="mouseup($event)"
-                    v-for="data in row">{{ data }}</td>
+                    v-for="data in  row ">
+                    <span v-if="data.edit">{{ data.value }}</span>
+                    <textarea v-if="!data.edit"></textarea>
+                </td>
             </tr>
         </table>
     </div>
@@ -132,5 +144,19 @@ td {
     user-select: none;
     border: 1px solid black;
     /* 添加底部横线 */
+}
+
+.menu {
+    height: 25px;
+    width: 400px;
+    display: flex;
+
+    border: 1px solid black;
+    border-radius: 4%;
+}
+
+.menu-item {
+    flex: 1;
+    border: 1px solid black;
 }
 </style>
