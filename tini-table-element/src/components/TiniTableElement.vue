@@ -87,14 +87,12 @@ function mouseup(event: MouseEvent) {
 }
 
 function chooseCell(): void {
-  let [startRow, endRow] = [
-    (startCell.value?.parentNode as HTMLTableRowElement).rowIndex,
-    (endCell.value?.parentNode as HTMLTableRowElement).rowIndex,
-  ].sort();
-  let [startCol, endCol] = [
-    startCell.value?.cellIndex,
-    endCell.value?.cellIndex,
-  ].sort();
+  const {
+    startRow,
+    endRow,
+    startCol,
+    endCol,
+  } =CalculateStartAndEnd (startCell.value,endCell.value)
   for (let i = 0; i < props.rows; i++) {
     let rows = tiniTable.value?.rows[i];
     for (let j = 0; j < props.cols; j++) {
@@ -105,6 +103,24 @@ function chooseCell(): void {
         cell.style.backgroundColor = "";
       }
     }
+  }
+}
+
+//! 计算起止节点
+function CalculateStartAndEnd(startCell:HTMLTableCellElement,endCell:HTMLTableCellElement){
+  let [startRow, endRow] = [
+    (startCell.parentNode as HTMLTableRowElement).rowIndex,
+    (endCell.parentNode as HTMLTableRowElement).rowIndex,
+  ].sort();
+  let [startCol, endCol] = [
+    startCell.cellIndex,
+    endCell.cellIndex,
+  ].sort();
+  return {
+    startRow,
+    endRow,
+    startCol,
+    endCol,
   }
 }
 
@@ -153,6 +169,31 @@ function set_focus(el: HTMLElement) {
   sel!.addRange(range);
 }
 
+function mergeCells(){
+  const {
+    startRow,
+    endRow,
+    startCol,
+    endCol,
+  } =CalculateStartAndEnd (startCell.value,endCell.value);
+  const rowSpan = endRow - startRow + 1;
+  const colSpan = endCol - startCol + 1;
+
+  for(let i = endRow;i >= startRow;i--){
+    const tableRow = tiniTable.value.rows[i];
+    for(let j = endCol; j >= startCol; j--){
+      if(i == startRow && j == startCol){
+        continue
+      }
+      const cellToHide = tableRow.cells[j];
+      cellToHide.style.display = "none"
+    }
+  }  
+  startCell.value.rowSpan = rowSpan;
+  startCell.value.colSpan = colSpan;
+  
+}
+
 onMounted(() => {
   window.addEventListener("click", cancelChosen);
 });
@@ -170,7 +211,7 @@ export type CellType = {
   <span>表格的行数：{{ props.rows }}</span>
   <span>表格的列数：{{ props.cols }}</span>
   <div class="menu">
-    <span class="menu-item">合并单元格</span>
+    <span class="menu-item" @click ="mergeCells()">合并单元格</span>
     <span class="menu-item">新增一行</span>
     <span class="menu-item">新增一列</span>
     <span class="menu-item">删除行</span>
